@@ -923,6 +923,10 @@ Java_com_sun_max_tele_debug_linux_LinuxTask_nativeReadBytes(JNIEnv *env, jclass 
 
 JNIEXPORT jboolean JNICALL
 Java_com_sun_max_tele_debug_linux_LinuxTask_nativeSetInstructionPointer(JNIEnv *env, jclass c, jint tid, jlong instructionPointer) {
+#ifdef __riscv
+    /* Michalis Vardoulakis @ Fri May 3: As far as I can tell ptrace is not implemented on linux for riscv*/
+    return false;
+#else
     user_regs_structure registers;
 
     if (ptrace(PT_GETREGS, tid, 0, &registers) != 0) {
@@ -936,6 +940,7 @@ Java_com_sun_max_tele_debug_linux_LinuxTask_nativeSetInstructionPointer(JNIEnv *
     registers.rip = instructionPointer;
 #endif
     return ptrace(PT_SETREGS, tid, 0, &registers) == 0;
+#endif /*__riscv*/
 }
 
 /*
@@ -948,6 +953,10 @@ static jboolean copyRegisters(JNIEnv *env, jobject  this, user_regs_structure *o
         jbyteArray integerRegisters, jint integerRegistersLength,
         jbyteArray floatingPointRegisters, jint floatingPointRegistersLength,
         jbyteArray stateRegisters, jint stateRegistersLength) {
+#ifdef __riscv
+    /* Michalis Vardoulakis @ Fri May 3: user_regs and user_regs_structure are not defined on linux riscv*/
+    return false;
+#else
     isa_CanonicalIntegerRegistersStruct canonicalIntegerRegisters;
     isa_CanonicalStateRegistersStruct canonicalStateRegisters;
     isa_CanonicalFloatingPointRegistersStruct canonicalFloatingPointRegisters;
@@ -975,6 +984,7 @@ static jboolean copyRegisters(JNIEnv *env, jobject  this, user_regs_structure *o
     (*env)->SetByteArrayRegion(env, stateRegisters, 0, stateRegistersLength, (void *) &canonicalStateRegisters);
     (*env)->SetByteArrayRegion(env, floatingPointRegisters, 0, floatingPointRegistersLength, (void *) &canonicalFloatingPointRegisters);
     return true;
+#endif /*__riscv*/
 }
 
 JNIEXPORT jboolean JNICALL
@@ -983,6 +993,10 @@ Java_com_sun_max_tele_debug_linux_LinuxTask_nativeReadRegisters(JNIEnv *env, jcl
                 jbyteArray floatingPointRegisters, jint floatingPointRegistersLength,
                 jbyteArray stateRegisters, jint stateRegistersLength) {
 
+#ifdef __riscv
+    /* Michalis Vardoulakis @ Fri May 3: user_regs and user_regs_structure are not defined on linux riscv*/
+    return false;
+#else
     user_regs_structure osRegisters;
     if (ptrace(PT_GETREGS, tid, 0, &osRegisters) != 0) {
         return false;
@@ -997,6 +1011,7 @@ Java_com_sun_max_tele_debug_linux_LinuxTask_nativeReadRegisters(JNIEnv *env, jcl
                     integerRegisters, integerRegistersLength,
                     floatingPointRegisters, floatingPointRegistersLength,
                     stateRegisters, stateRegistersLength);
+#endif /*__riscv*/
 }
 
 // The following methods support core-dump access for Linux
@@ -1023,7 +1038,7 @@ Java_com_sun_max_tele_debug_linux_LinuxDumpThreadAccess_taskRegisters(JNIEnv *en
                 jbyteArray stateRegisters, jint stateRegistersLength) {
     prstatus_t * prstatus = (prstatus_t *) ((*env)->GetDirectBufferAddress(env, bytebuffer_status));
     elf_fpregset_t *fpregset = (elf_fpregset_t *) ((*env)->GetDirectBufferAddress(env, bytebuffer_fpreg));
-    return copyRegisters(env, class, (user_regs_structure *) &prstatus->pr_reg[0], fpregset,
+    return copyRegisters(env, class, (user_regs_structure *) &prstatus->pr_reg[0], (user_fpregs_structure *) fpregset,
                     integerRegisters, integerRegistersLength,
                     floatingPointRegisters, floatingPointRegistersLength,
                     stateRegisters, stateRegistersLength);

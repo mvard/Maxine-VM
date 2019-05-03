@@ -78,7 +78,7 @@ Java_com_sun_max_platform_Platform_nativeHasIDiv(JNIEnv *env, jclass c) {
 }
 
 /*
- *  ATTENTION: return value must correspond to an ISA enum value.
+ *  ATTENTION: return value must correspond to an ISA enum value. (file: com.sun.max/src/com/sun/max/lang/ISA.java)
  */
 JNIEXPORT jobject JNICALL
 Java_com_sun_max_platform_Platform_nativeGetISA(JNIEnv *env, jclass c)
@@ -95,6 +95,8 @@ Java_com_sun_max_platform_Platform_nativeGetISA(JNIEnv *env, jclass c)
     return (*env)->NewStringUTF(env, "ARM");
 #elif isa_AARCH64
     return (*env)->NewStringUTF(env, "Aarch64");
+#elif isa_RISCV64
+    return (*env)->NewStringUTF(env, "RISCV64");
 #else
 #   error
 #endif

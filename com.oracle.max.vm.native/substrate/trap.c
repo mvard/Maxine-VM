@@ -172,6 +172,8 @@ static Address getInstructionPointer(UContext *ucontext) {
     return ucontext->uc_mcontext.arm_pc;
 #   elif isa_AARCH64
     return ucontext->uc_mcontext.pc;
+#   elif isa_RISCV64
+    return ucontext->uc_mcontext.__gregs[REG_PC];
 #   endif
 #elif os_DARWIN
     return ucontext->uc_mcontext->__ss.__rip;
