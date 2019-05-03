@@ -43,6 +43,10 @@ boolean task_read_registers(pid_t tid,
     isa_CanonicalStateRegistersStruct *canonicalStateRegisters,
     isa_CanonicalFloatingPointRegistersStruct *canonicalFloatingPointRegisters) {
 
+#ifdef __riscv
+    /* Michalis Vardoulakis @ Fri May 3: As far as I can tell ptrace is not implemented on linux for riscv*/
+    return false;
+#else
     if (canonicalIntegerRegisters != NULL || canonicalStateRegisters != NULL) {
 #ifndef __arm__
         struct user_regs_struct osIntegerRegisters;
@@ -75,6 +79,7 @@ boolean task_read_registers(pid_t tid,
     }
 
     return true;
+#endif /*__riscv*/
 }
 
 ThreadState_t toThreadState(char taskState, pid_t tid) {
@@ -107,6 +112,8 @@ static void gatherThread(JNIEnv *env, pid_t tgid, pid_t tid, jobject linuxTelePr
         Address stackPointer = (Address) canonicalIntegerRegisters.r13;
 #elif defined __aarch64__
         Address stackPointer = (Address) canonicalStateRegisters.sp;
+#elif defined(__riscv)
+        Address stackPointer = (Address) canonicalIntegerRegisters.x2;
 #else
         Address stackPointer = (Address) canonicalIntegerRegisters.rsp;
 #endif
@@ -115,7 +122,11 @@ static void gatherThread(JNIEnv *env, pid_t tgid, pid_t tid, jobject linuxTelePr
         ProcessHandleStruct ph = {tgid, tid};
         tla = teleProcess_findTLA(&ph, tlaList, stackPointer, threadLocals, &nativeThreadLocalsStruct);
     }
+#ifdef __riscv
+    teleProcess_jniGatherThread(env, linuxTeleProcess, threadList, tid, toThreadState(taskState, tid), (jlong) canonicalIntegerRegisters.x3, tla);
+#else
     teleProcess_jniGatherThread(env, linuxTeleProcess, threadList, tid, toThreadState(taskState, tid), (jlong) canonicalStateRegisters.rip, tla);
+#endif
 }
 
 JNIEXPORT void JNICALL

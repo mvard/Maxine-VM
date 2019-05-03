@@ -112,6 +112,9 @@ ifeq ($(TARGETOS),Linux)
         OTHER_CFLAGS := -marm -O0 -g -mcpu=cortex-a9
         TARGET_WORD_SIZE := w32
     endif
+    ifeq ($(TARGETISA), riscv64)
+    	ISA := riscv64
+    endif
 endif
 
 ifeq ($(TARGETOS),SunOS)
