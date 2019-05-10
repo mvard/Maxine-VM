@@ -338,11 +338,17 @@ void threadLocalsBlock_destroy(Address tlBlock) {
 #endif
 }
 
+// Wrapper for threadLocalBlock_destroy function to avoid error when using recent gcc version
+// compile error observed on version 9.0.1
+void _threadLocalsBlock_destroy_wrapper(void* tlBlock) {
+    threadLocalsBlock_destroy((Address) tlBlock);
+}
+
 void tla_initialize(int tlaSize) {
     theTLASize = tlaSize;
 #if !TELE
 #if os_DARWIN || os_LINUX
-    pthread_key_create(&theThreadLocalsKey, (ThreadLocalsBlockDestructor) threadLocalsBlock_destroy);
+    pthread_key_create(&theThreadLocalsKey, (ThreadLocalsBlockDestructor) _threadLocalsBlock_destroy_wrapper);
 #elif os_SOLARIS
     thr_keycreate(&theThreadLocalsKey, (ThreadLocalsBlockDestructor) threadLocalsBlock_destroy);
 #elif os_MAXVE
